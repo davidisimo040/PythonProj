@@ -77,7 +77,7 @@ def encrypt_file(initialPath, finalPath):
     fileWrite.close()
 
 
-def decrypt_file(path):
+def decrypt_file(path, decryption_key):
     path_encr = path + r"\encryption.txt"
     path_dec = r"decryption.txt"
     fileRead = open(path_encr, "rb")
@@ -87,7 +87,7 @@ def decrypt_file(path):
     block_data = message.split(',')
     for i in range(len(block_data) - 1):
         aux = int(block_data[i])
-        aux = aux ** private_key[0] % private_key[1]
+        aux = aux ** decryption_key[0] % decryption_key[1]
         fileWrite.write(chr(aux))
     fileRead.close()
     fileWrite.close()

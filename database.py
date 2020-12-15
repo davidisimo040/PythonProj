@@ -32,7 +32,7 @@ def sql_connection():
 def sql_table(connection):
     cursorObj = connection.cursor()
     cursorObj.execute(
-        "CREATE TABLE IF NOT EXISTS encryptedDatabase(fileName text PRIMARY KEY, fileType text, encryptedPath text, metodaCriptare text, size text)")
+        "CREATE TABLE IF NOT EXISTS encryptedDatabase(fileName text PRIMARY KEY, fileType text, encryptedPath text, metodaCriptare text, fileKey text, size text)")
     connection.commit()
 
 
@@ -55,9 +55,10 @@ def sql_add(con, file):
     if not filePath:
         print("Exista deja acest fisier!")
     else:
-        params = (fileName, fileType, filePath, 'RSA', str(additional.getSize(file)))
+        params = (
+            fileName, fileType, filePath, 'RSA', str(additional.getCurrentPrivateKey()), str(additional.getSize(file)))
         try:
-            cursorObj.execute("INSERT INTO encryptedDatabase VALUES(?,?,?,?,?)", params)
+            cursorObj.execute("INSERT INTO encryptedDatabase VALUES(?,?,?,?,?,?)", params)
             con.commit()
             print(f"Fisierul {fileName} a fost inserat cu succes!")
             try:
@@ -113,15 +114,35 @@ def sql_show(con, fileName):
             print("Nu exista acest fisier! Incercati altul!")
             return
         try:
+            decryption_key = []
             fileToView = \
-            cursorObj.execute("SELECT encryptedPath from encryptedDatabase WHERE fileName = ?", (fileName,)).fetchone()[
-                0]
+                cursorObj.execute("SELECT encryptedPath from encryptedDatabase WHERE fileName = ?",
+                                  (fileName,)).fetchone()[
+                    0]
+            private_key = \
+                cursorObj.execute("SELECT fileKey FROM encryptedDatabase WHERE fileName = ?", (fileName,)).fetchone()[0]
+            private_key = private_key.strip("()").split(",")
+            decryption_key.append(int(private_key[0]))
+            decryption_key.append(int(private_key[1]))
 
             print(f"Continutul fisierului {fileName} va fi afisat.\n\n")
-            crypto.decrypt_file(fileToView)
+            crypto.decrypt_file(fileToView, decryption_key)
 
         except Error:
             print(Error)
 
+    except Error:
+        print(Error)
+
+
+def sql_showall(con):
+    cursorObj = con.cursor()
+    try:
+        row = cursorObj.execute("SELECT fileName,fileType FROM encryptedDatabase").fetchall()
+        if len(row) > 0:
+            for r in row:
+                print(r[0] + "." + r[1])
+        else:
+            print("Nu exista momentan niciun fisier in baza de date!\n")
     except Error:
         print(Error)

@@ -1,4 +1,5 @@
 from pathlib import Path
+import crypto
 
 enrypted_directory = r'C:\Users\david\Desktop\PythonProj\encrypted'
 
@@ -12,3 +13,7 @@ def file_name(file):
 
 def getSize(file):
     return Path(file).stat().st_size
+
+
+def getCurrentPrivateKey():
+    return crypto.private_key

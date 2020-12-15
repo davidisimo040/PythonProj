@@ -1,0 +1,3 @@
+size_encrypt = min(len(bin(public_key[0])) - 2, len(bin(private_key[0])) - 2) // 8
+if size_encrypt < 1:
+    size_encrypt = 1
