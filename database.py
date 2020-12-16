@@ -7,8 +7,14 @@ from pathlib import Path
 import crypto
 
 
-def exists_row(n):
-    filePath = additional.enrypted_directory + rf'\{n}'
+def exists_row(filename):
+    """
+    Functie ce verifica daca exista fisierul dat ca si input in baza de date actuala;
+
+    :param filename: numele fisierului
+    :return: fals- daca exista, path- dupa ce a vazut ca nu exista si l-a creat
+    """
+    filePath = additional.enrypted_directory + rf'\{filename}'
     if Path(filePath).exists():
         return False
     os.makedirs(filePath)
@@ -16,6 +22,10 @@ def exists_row(n):
 
 
 def sql_connection():
+    """
+    Functie ce se conecteaza la baza de date
+    :return: conexiunea pt baza noastra de date
+    """
     try:
 
         con = sqlite3.connect('mydatabase.db')
@@ -30,6 +40,11 @@ def sql_connection():
 
 
 def sql_table(connection):
+    """
+    Functie ce creeaza o baza de date, in cazul in care nu exista deja aceasta
+    :param connection: conexiunea pt baza de date actuala
+    :return: None - doar creeaza daca nu exista tabela encryptedDatabase
+    """
     cursorObj = connection.cursor()
     cursorObj.execute(
         "CREATE TABLE IF NOT EXISTS encryptedDatabase(fileName text PRIMARY KEY, fileType text, encryptedPath text, metodaCriptare text, fileKey text, size text)")
@@ -37,12 +52,25 @@ def sql_table(connection):
 
 
 def sql_delete(con):
+    """
+    Functie ce dropeaza un tabel specificat daca exista
+    :param con: conexiunea la baza de data curenta
+    :return: None, sterge tabela specifica conexiunii curente
+    """
     cursorObj = con.cursor()
     cursorObj.execute("DROP TABLE IF EXISTS encryptedDatabase")
     con.commit()
 
 
 def sql_add(con, file):
+    """
+    Functie ce adauga in baza de date metadatele despre fisierul file si creeaza in folderul de encryption un folder in care se afla mesajul criptat al acestui file.
+    In baza de date se introduc: nume, tip_fisier, size, metoda_criptare si key_for_decryption.
+
+    :param con: conexiunea la baza de data curenta
+    :param file: path-ul fisierului ce trebuie adaugat
+    :return: None- daca verificarile au trecut cu succes, fisierul nou a fost adaugat cu succes
+    """
     cursorObj = con.cursor()
     name = additional.file_name(file)
     if not name:
@@ -76,6 +104,12 @@ def sql_add(con, file):
 
 
 def sql_remove(con, fileName):
+    """
+    Functie care primeste un nume de fisier, iar daca acesta exista, il sterge din baza de date si de asemenea ii sterge folderul criptat asociat file-ului sau.
+    :param con: conexiunea la baza de data curenta
+    :param fileName: numele fisierului ce trebuie sters
+    :return: None- daca fisierul exista, acesta va fi sters din baza de date si fisierul unde sunt stocate criptarile
+    """
     cursorObj = con.cursor()
     try:
         rez = \
@@ -104,6 +138,13 @@ def sql_remove(con, fileName):
 
 
 def sql_show(con, fileName):
+    """
+    Functie ce afiseaza decriptat file-ul: fileName, prin decriptarea fisierului cripptat asociat in folderul encrypted, folosind private key-ul sau stocat in metadate on baza de date.
+    :param con: conexiunea la baza de data curenta
+    :param fileName: numele fisierului ce dorim sa il vizualizam
+    :return: None- ia key-ul de decriptare din baza de date si file-ul criptat din folderul de criptate, si in final il decripteaza prin metoda RSA cu key-ul aferent.
+    Mesajul decriptat va fi deschis intr-o fereastra.
+    """
     cursorObj = con.cursor()
     try:
         rez = \
@@ -136,6 +177,11 @@ def sql_show(con, fileName):
 
 
 def sql_showall(con):
+    """
+    Functie ce afiseaza toate fisierele existente curent in baza de date.
+    :param con: conexiunea la baza de data curenta
+    :return: None- afiseaza numele tuturor fisierelor curente din baza de date.
+    """
     cursorObj = con.cursor()
     try:
         row = cursorObj.execute("SELECT fileName,fileType FROM encryptedDatabase").fetchall()
